@@ -14,7 +14,7 @@ app.use(cors("*"));
 app.use(bodyParser.json());
 dotenv.config();
 
-var status = "home";
+var status = "college";
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.AUTH_TOKEN;
