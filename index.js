@@ -4,7 +4,13 @@ const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 
 const app = express();
-app.use(cors());
+app.use(cors("*"));
+// app.use(
+//   cors({
+//     origin: process.env.CORS_ORIGIN,
+//     credentials: true,
+//   })
+// );
 app.use(bodyParser.json());
 dotenv.config();
 
@@ -41,7 +47,9 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 app.post("/location", (req, res) => {
-  const { lat, lon } = req.body;
+  const { lat, lon, date_time } = req.body;
+  console.log(`Received location: ${lat}, ${lon}, ${date_time}`);
+
   if (!lat || !lon) {
     return res.status(400).send("Invalid data");
   }
@@ -54,10 +62,10 @@ app.post("/location", (req, res) => {
       break;
     }
   }
-  // if location is college and status is home and time is between 10am to 5pm => send message 'Hemant reached college'
-  // if location is home and status is college and time is between 10am to 11pm => send message 'Hemant reached home'
-  // if location is college and status is college => do nothing
-  // if location is home and status is home => do nothing
+  console.log(`Location: ${location}`);
+
+  // Adjust status handling
+  let statusMessage = "";
 
   if (location === "college" && status === "home") {
     groupMembers.forEach((number) => {
@@ -75,6 +83,7 @@ app.post("/location", (req, res) => {
         );
     });
     status = "college";
+    statusMessage = "Hemant reached college 🏫";
   } else if (location === "home" && status === "college") {
     groupMembers.forEach((number) => {
       client.messages
@@ -91,7 +100,14 @@ app.post("/location", (req, res) => {
         );
     });
     status = "home";
-    res.send(`Location: ${location}`);
+    statusMessage = "Hemant reached home 🏠";
+  }
+
+  // Always send a response to the client
+  if (statusMessage) {
+    res.send(`Location: ${location}. ${statusMessage}`);
+  } else {
+    res.send(`Location: ${location}. No status change.`);
   }
 });
 
