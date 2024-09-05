@@ -1,8 +1,9 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require("dotenv");
-const bodyParser = require("body-parser");
-
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import bodyParser from "body-parser";
+import twilio from "twilio";
+import ApiResponse from "./utils/ApiResponse.js";
 const app = express();
 app.use(cors("*"));
 // app.use(
@@ -14,12 +15,10 @@ app.use(cors("*"));
 app.use(bodyParser.json());
 dotenv.config();
 
-var status = "college";
-
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.AUTH_TOKEN;
-const client = require("twilio")(accountSid, authToken);
 
+const client = twilio(accountSid, authToken);
 const groupMembers = [
   "whatsapp:+917559228490",
   "whatsapp:+918080644421",
@@ -47,8 +46,8 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 app.post("/location", (req, res) => {
-  const { lat, lon, date_time } = req.body;
-  console.log(`Received location: ${lat}, ${lon}, ${date_time}`);
+  var { lat, lon, initialLocation } = req.body;
+  console.log(`${lat}, ${lon}, ${initialLocation}`);
 
   if (!lat || !lon) {
     return res.status(400).send("Invalid data");
@@ -62,12 +61,10 @@ app.post("/location", (req, res) => {
       break;
     }
   }
-  console.log(`Location: ${location}`);
 
-  // Adjust status handling
   let statusMessage = "";
 
-  if (location === "college" && status === "home") {
+  if (location === "college" && initialLocation === "home") {
     groupMembers.forEach((number) => {
       client.messages
         .create({
@@ -82,9 +79,9 @@ app.post("/location", (req, res) => {
           console.error(`Error sending message to ${number}:`, err)
         );
     });
-    status = "college";
+    initialLocation = "college";
     statusMessage = "Hemant reached college 🏫";
-  } else if (location === "home" && status === "college") {
+  } else if (location === "home" && initialLocation === "college") {
     groupMembers.forEach((number) => {
       client.messages
         .create({
@@ -99,16 +96,46 @@ app.post("/location", (req, res) => {
           console.error(`Error sending message to ${number}:`, err)
         );
     });
-    status = "home";
+    initialLocation = "home";
     statusMessage = "Hemant reached home 🏠";
   }
-
-  // Always send a response to the client
+  console.log(`Location: ${location}, message: ${statusMessage}`);
   if (statusMessage) {
-    res.send(`Location: ${location}. ${statusMessage}`);
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, statusMessage, { currLocation: initialLocation })
+      );
   } else {
-    res.send(`Location: ${location}. No status change.`);
+    return res.status(200).json(
+      new ApiResponse(200, "No status update", {
+        currLocation: initialLocation,
+      })
+    );
   }
+});
+
+app.post("/initialLocation", (req, res) => {
+  const { lat, lon } = req.body;
+
+  if (!lat || !lon) {
+    return res.status(400).send("Invalid data");
+  }
+
+  let location = "Unknown";
+  for (const [areaName, area] of Object.entries(areas)) {
+    const distance = haversineDistance(lat, lon, area.lat, area.lon);
+    if (distance <= area.radius) {
+      location = areaName;
+      break;
+    }
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, "Location fetched", {
+      initialLocation: location,
+    })
+  );
 });
 
 app.get("/", (req, res) => {
