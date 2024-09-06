@@ -24,8 +24,8 @@ var prevLocation = "college";
 const client = twilio(accountSid, authToken);
 const groupMembers = [
   "whatsapp:+917559228490",
-  "whatsapp:+918080644421",
-  "whatsapp:+919325212010",
+  // "whatsapp:+918080644421",  make prevLocation = "home" in deployment
+  // "whatsapp:+919325212010",
 ];
 
 const areas = {
