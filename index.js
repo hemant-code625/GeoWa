@@ -19,13 +19,13 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.AUTH_TOKEN;
 
 // There are only 2 prev locations: home and college
-var prevLocation = "college";
+var prevLocation = "home";
 
 const client = twilio(accountSid, authToken);
 const groupMembers = [
   "whatsapp:+917559228490",
-  // "whatsapp:+918080644421",  make prevLocation = "home" in deployment
-  // "whatsapp:+919325212010",
+  "whatsapp:+918080644421",
+  "whatsapp:+919325212010",
 ];
 
 const areas = {
