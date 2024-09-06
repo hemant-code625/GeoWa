@@ -18,8 +18,8 @@ dotenv.config();
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.AUTH_TOKEN;
 
-// There are only 3 locations: home, college, and unknown
-var prevLocation = "home";
+// There are only 2 prev locations: home and college
+var prevLocation = "college";
 
 const client = twilio(accountSid, authToken);
 const groupMembers = [
@@ -29,8 +29,8 @@ const groupMembers = [
 ];
 
 const areas = {
-  home: { lat: 19.872965191245473, lon: 75.33982995870663, radius: 50 },
-  college: { lat: 19.879957240615607, lon: 75.3568617444232, radius: 100 },
+  home: { lat: 19.872955486892238, lon: 75.33972991398547, radius: 80 },
+  college: { lat: 19.879700301635086, lon: 75.35650120324422, radius: 120 },
 };
 
 const haversineDistance = (lat1, lon1, lat2, lon2) => {
