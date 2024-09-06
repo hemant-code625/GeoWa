@@ -104,28 +104,18 @@ app.post("/location", (req, res) => {
   }
 
   if (statusMessage) {
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          statusMessage,
-          { currLocation: location },
-          { prevLocation }
-        )
-      );
+    return res.status(200).json(
+      new ApiResponse(200, statusMessage, {
+        currLocation: location,
+        prevLocation,
+      })
+    );
   } else {
     return res.status(200).json(
-      new ApiResponse(
-        200,
-        "No status update",
-        {
-          currLocation: null,
-        },
-        {
-          prevLocation,
-        }
-      )
+      new ApiResponse(200, "No status update", {
+        currLocation: null,
+        prevLocation,
+      })
     );
   }
 });
