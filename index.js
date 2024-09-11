@@ -47,8 +47,48 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
 
   return R * c;
 };
+// Function to retry WhatsApp message with interval-based retry mechanism
+const sendWhatsAppMessageWithRetry = async (
+  body,
+  number,
+  interval = 30000,
+  maxDuration = 300000
+) => {
+  let success = false;
+  let startTime = Date.now();
 
-app.post("/location", (req, res) => {
+  const attemptToSendMessage = async () => {
+    try {
+      const message = await client.messages.create({
+        body,
+        from: `whatsapp:+${process.env.TWILIO_NUMBER}`,
+        to: number,
+      });
+      console.log(`Message sent to ${number}: ${message.body}`);
+      success = true; // Mark success when the message is sent
+    } catch (error) {
+      console.error(`Error sending message to ${number}:`, error);
+      if (Date.now() - startTime < maxDuration && !success) {
+        console.log(
+          `Retrying to send message to ${number} in ${
+            interval / 1000
+          } seconds...`
+        );
+        setTimeout(attemptToSendMessage, interval); // Retry after the defined interval
+      } else {
+        console.log(
+          `Failed to send message to ${number} after ${
+            maxDuration / 1000
+          } seconds`
+        );
+      }
+    }
+  };
+
+  attemptToSendMessage(); // Start the first attempt
+};
+
+app.post("/location", async (req, res) => {
   var { lat, lon } = req.body;
   console.log(`${lat}, ${lon}, ${prevLocation}`);
 
@@ -68,37 +108,17 @@ app.post("/location", (req, res) => {
   let statusMessage = "";
 
   if (location === "college" && prevLocation === "home") {
-    groupMembers.forEach((number) => {
-      client.messages
-        .create({
-          body: "Hemant reached college 🏫",
-          from: `whatsapp:+${process.env.TWILIO_NUMBER}`,
-          to: number,
-        })
-        .then((message) =>
-          console.log(`Message sent to ${number}: ${message.body}`)
-        )
-        .catch((err) =>
-          console.error(`Error sending message to ${number}:`, err)
-        );
-    });
+    for (const number of groupMembers) {
+      // Retry every 30 seconds, with a maximum retry duration of 5 minutes (300000 ms)
+      sendWhatsAppMessageWithRetry("Hemant reached college 🏫", number);
+    }
     prevLocation = "college";
     statusMessage = "Hemant reached college 🏫";
   } else if (location === "home" && prevLocation === "college") {
-    groupMembers.forEach((number) => {
-      client.messages
-        .create({
-          body: "Hemant reached home 🏠",
-          from: `whatsapp:+${process.env.TWILIO_NUMBER}`,
-          to: number,
-        })
-        .then((message) =>
-          console.log(`Message sent to ${number}: ${message.body}`)
-        )
-        .catch((err) =>
-          console.error(`Error sending message to ${number}:`, err)
-        );
-    });
+    for (const number of groupMembers) {
+      // Retry every 30 seconds, with a maximum retry duration of 5 minutes (300000 ms)
+      sendWhatsAppMessageWithRetry("Hemant reached home 🏠", number);
+    }
     prevLocation = "home";
     statusMessage = "Hemant reached home 🏠";
   }
@@ -113,7 +133,7 @@ app.post("/location", (req, res) => {
   } else {
     return res.status(200).json(
       new ApiResponse(200, "No status update", {
-        currLocation: null,
+        currLocation: location,
         prevLocation,
       })
     );
